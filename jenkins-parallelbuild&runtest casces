@@ -1,0 +1,37 @@
+@Library('lokisharedlibs') _
+pipeline{
+    agent any
+    
+    tools{
+        maven 'maven3.9.0'
+    }
+    stages{
+        stage('checkout code'){
+            steps{
+                sendSlackNotifications('STARTED')
+                git credentialsId: '35cb5824-56de-4080-a955-741764651206', url: 'https://github.com/lokeshsgithub/maven_java_web_example-fork.git'
+            }
+        }
+        stage('Run test cases & build'){
+            steps{
+                parallel(
+                    RunTestCases:{
+                        sh "mvn clean test"
+                    },
+                    Build:{
+                        sh "mvn clean package"
+                    }
+                    
+                 )
+            }
+        }
+    }//stages closed
+    post{
+        success{
+            sendSlackNotifications(currentBuild.result)
+        }
+        failure{
+            sendSlackNotifications(currentBuild.result)
+        }
+    }
+}//pipeline closed
